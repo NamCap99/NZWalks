@@ -13,15 +13,37 @@ namespace NZWalks.Controllers
         [HttpGet]
         public IActionResult GetAllStudents()
         {
-            // this is a hardcoded list of students
-            string[] studentNames = new string[]
-            {
-                "John Doe",
-                "Jane Smith",
-                "Sam Brown",
-                "Lisa White"
-            };
-            return Ok(studentNames);
+            var students = new List<string>
+                {
+                    "William",
+                    "Nam",
+                    "Craig",
+                    "John",
+                    "Sarah",
+                    "Emily",
+                    "Michael"
+                };
+            return Ok(students);
         }
+        //GET: https://localhost:portnumber/api/students/1
+        //[HttpGet("{id}")]
+        //public IActionResult GetStudentById(int id)
+        //{
+        //    var students = new List<string>
+        //        {
+        //            "William",
+        //            "Nam",
+        //            "Craig",
+        //            "John",
+        //            "Sarah",
+        //            "Emily",
+        //            "Michael"
+        //        };
+        //    if (id < 0 || id >= students.Count)
+        //    {
+        //        return NotFound("Student not found.");
+        //    }
+        //    return Ok(students[id]);
+        //}
     }
 }
