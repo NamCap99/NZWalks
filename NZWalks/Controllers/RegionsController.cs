@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using NZWalks.API.Models.Domain;
 using NZWalks.Data;
 using NZWalks.Models.DTO;
+using NZWalks.Repositories;
 
 namespace NZWalks.Controllers
 {
@@ -13,10 +14,12 @@ namespace NZWalks.Controllers
     public class RegionsController : ControllerBase
     {
         private readonly NZWalksDbContext _dbContext;
+        private readonly IRegionRepository _regionRepository;
 
-        public RegionsController(NZWalksDbContext dbContext)
+        public RegionsController(NZWalksDbContext dbContext, IRegionRepository regionRepository)
         {
             _dbContext = dbContext; // assign parameter to private field
+            this._regionRepository = regionRepository;
         }
 
         // GET All Regions
@@ -24,30 +27,16 @@ namespace NZWalks.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            //// Get Data from Database - Domain Models
-            //var regionsDomain = await _dbContext.Regions.ToListAsync();
 
-            //// Map Domain Models to DTOs
-            //var regionsDTO = new List<RegionsDTO>();
-            //foreach (var regionDomain in regionsDomain)
-            //{
-            //    regionsDTO.Add(new RegionsDTO()
-            //    {
-            //        Id = regionDomain.Id,
-            //        Code = regionDomain.Code,
-            //        Name = regionDomain.Name,
-            //        RegionImageUrl = regionDomain.RegionImageUrl,
-            //    });
-            //}
-
-            var regionsDTO = await _dbContext.Regions
-                .Select(r => new RegionsDTO
-                {
-                    Id = r.Id,
-                    Code = r.Code,
-                    Name = r.Name,
-                    RegionImageUrl = r.RegionImageUrl,
-                }).ToListAsync();
+            var regions = await _regionRepository.GetAllAsync();
+            var regionsDTO = regions
+                .Select(r=> new RegionsDTO 
+            {
+                Id = r.Id,
+                Code = r.Code,
+                Name = r.Name,
+                RegionImageUrl = r.RegionImageUrl,
+            });
 
             // return DTOs
             return Ok(regionsDTO);
@@ -57,9 +46,10 @@ namespace NZWalks.Controllers
         // GET: https://localhost:portnumber/api/regions/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(Guid id)
-        {   
+        {
             // Get Region Domain Model From Database
-            var regionDomain = await _dbContext.Regions.FirstOrDefaultAsync(x => x.Id == id);
+            //var regionDomain = await _dbContext.Regions.FirstOrDefaultAsync(x => x.Id == id);
+            var regionDomain = await _regionRepository.GetByIdAsync(id);
             if (regionDomain == null) return NotFound();
 
             // Map the Region Domain Model to Region DTO
@@ -89,17 +79,15 @@ namespace NZWalks.Controllers
             };
 
             // Use Domain Model to Create Region
-            _dbContext.Regions.Add(regionDomainModel);
-
-            await _dbContext.SaveChangesAsync();
+            var created = await _regionRepository.CreateAsync(regionDomainModel);
 
             // Map Domain model back to DTO
             var responseDTO = new RegionResponseDTO
             {
-                Id = regionDomainModel.Id,
-                Code = regionDomainModel.Code,
-                Name = regionDomainModel.Name,
-                RegionImageUrl = regionDomainModel.RegionImageUrl,
+                Id = created.Id,
+                Code = created.Code,
+                Name = created.Name,
+                RegionImageUrl = created.RegionImageUrl,
             };
 
             return CreatedAtAction(nameof(Get), new {id = responseDTO.Id}, responseDTO); // 201
@@ -113,26 +101,20 @@ namespace NZWalks.Controllers
 
             if (id != update.Id) return BadRequest("Route ID and body ID do not match");
 
-            // 1) Load the existing Region entity
-            // check if region exists
-            var region = await _dbContext.Regions.FindAsync(id); // FindAsync(id) slightly cleaner
-            if (region == null) return NotFound();
+            //// 1) Load the existing Region entity
+            //// check if region exists
+         
+            // 2) Map the only allowed fields from DTO --> Entity0
+            var domain = new Region
+            {
+                Id = update.Id,
+                Code = update.Code,
+                Name = update.Name,
+                RegionImageUrl = update.RegionImageUrl,
+            };
 
-            // 2) Map the only allowed fields from DTO --> Entity
-            region.Code = update.Code;
-            region.Name = update.Name;
-            region.RegionImageUrl = update.RegionImageUrl;
-
-            // EF Core 7+ 
-            //var affected = await _dbContext.Regions
-            //    .Where(r => r.Id == id)
-            //    .ExecuteUpdateAsync(s => s
-            //    .SetProperty(r => r.Code, update.Code)
-            //    .SetProperty(r => r.Name, update.Name)
-            //    .SetProperty(r => r.RegionImageUrl, update.Name));
-
-            //if (affected == 0) return NotFound();
-
+            var updated = await _regionRepository.UpdateAsync(id, domain);
+            if (updated != null) return NotFound();
 
             // 3) Save changes (EF ready tracks 'region', so this issues an UPDATE)
             await _dbContext.SaveChangesAsync();
@@ -140,35 +122,29 @@ namespace NZWalks.Controllers
             // convert Domain Model to DTO
             var regionDTO = new RegionsDTO
             {
-                Id = region.Id,
-                Code = region.Code,
-                Name = region.Name,
-                RegionImageUrl = region.RegionImageUrl,
+                Id = updated.Id,
+                Code = updated.Code,
+                Name = updated.Name,
+                RegionImageUrl = updated.RegionImageUrl,
             };
 
             return Ok(regionDTO);
-
-            //return NoContent(); // 204 No Content (succesful but no body)
         }
 
         // DELETE: api/RegionsApi/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var region = await _dbContext.Regions.FindAsync(id);
-            if (region == null) return NotFound();
-
-            _dbContext.Regions.Remove(region);
-            await _dbContext.SaveChangesAsync();
+            var deleted = await _regionRepository.DeleteAsync(id);
 
             // return the deleted Region back
             // Map domal model to DTO
             var regionDTO = new RegionsDTO
             {
-                Id = region.Id,
-                Code = region.Code,
-                Name = region.Name,
-                RegionImageUrl = region.RegionImageUrl,
+                Id = deleted.Id,
+                Code = deleted.Code,
+                Name = deleted.Name,
+                RegionImageUrl = deleted.RegionImageUrl,
             };
 
             return Ok(regionDTO);
