@@ -42,9 +42,16 @@ namespace NZWalks.Repositories
             return existingRegion;
         }
 
-        public Task<Region?> DeleteAsync(Guid id)
+        public async Task<Region?> DeleteAsync(Guid id)
         {
-            throw new NotImplementedException();
+            var existingRegion = await _dbContext.Regions.FindAsync(id);
+
+            if (existingRegion == null) return null;
+
+           _dbContext.Regions.Remove(existingRegion);
+            await _dbContext.SaveChangesAsync();
+
+            return existingRegion;
         }
     }
 }

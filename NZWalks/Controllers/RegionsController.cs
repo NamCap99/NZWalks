@@ -114,7 +114,7 @@ namespace NZWalks.Controllers
             };
 
             var updated = await _regionRepository.UpdateAsync(id, domain);
-            if (updated != null) return NotFound();
+            if (updated == null) return NotFound();
 
             // 3) Save changes (EF ready tracks 'region', so this issues an UPDATE)
             await _dbContext.SaveChangesAsync();
@@ -136,6 +136,8 @@ namespace NZWalks.Controllers
         public async Task<IActionResult> Delete(Guid id)
         {
             var deleted = await _regionRepository.DeleteAsync(id);
+
+            if (deleted == null) return NotFound();
 
             // return the deleted Region back
             // Map domal model to DTO
