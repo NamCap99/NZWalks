@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NZWalks.API.Models.Domain;
 using NZWalks.Data;
+using NZWalks.Models.DTO;
 using System.Reflection.Metadata.Ecma335;
 
 namespace NZWalks.Repositories
@@ -19,7 +20,12 @@ namespace NZWalks.Repositories
 
         public async Task<Region?> GetByIdAsync(Guid id)
         {
-            return await _dbContext.Regions.FindAsync(id);
+
+            var existingRegion = await _dbContext.Regions.FirstOrDefaultAsync(r => r.Id == id);
+            if (existingRegion == null) return null;
+
+            //return await existingRegion.Regions.ToListAsync();
+            return existingRegion;
         }
 
         public async Task<Region> CreateAsync(Region region)
@@ -38,6 +44,7 @@ namespace NZWalks.Repositories
             existingRegion.Code = region.Code;
             existingRegion.Name = region.Name;
             existingRegion.RegionImageUrl = region.RegionImageUrl;
+            await _dbContext.SaveChangesAsync();
 
             return existingRegion;
         }

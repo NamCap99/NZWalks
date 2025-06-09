@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using NZWalks.Data;
+using NZWalks.Mappings;
 using NZWalks.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +20,14 @@ builder.Services.AddControllers();
 // 4. Configure Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+//builder = WebApplication.CreateBuilder(args);
+
+// This line will discover all Profile classes in the assembly
+builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
+
+
+// … other services
+
 
 var app = builder.Build();
 
